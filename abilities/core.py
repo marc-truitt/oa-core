@@ -1,4 +1,3 @@
-import logging
 import threading
 
 from core import oa, queue, Stub
@@ -14,12 +13,12 @@ def thread_name():
 def current_part():
     """ Return the part name which is associated with the current thread. """
     name = thread_name()
-    if hasattr(oa.core.parts, name):
-        return oa.core.parts[name]
-    else:
+    ret = oa.core.parts.get(name, None)
+    if ret is None:
         err = '%s Error: Cannot find a related part' %name
-        logging.error(err)
+        info(err)
         raise Exception(err)
+    return ret
 
 def call_function(func_or_value):
     """ A helper function. For Stubs, call `perform()`.
@@ -39,8 +38,8 @@ def info(*args, **kwargs):
         string += ' '.join([str(v) for v in args]) + '\n'
     if kwargs:
         string += '\n'.join([' %s: %s' %(str(k), str(v)) for k, v in kwargs.items()])
-    if hasattr(oa.core.parts, 'console') and not oa.core.finished.is_set():
-        oa.core.parts.console.wire_in.put(string)
+    if oa.console and not oa.core.finished.is_set():
+        oa.console.wire_in.put(string)
     else:
         print(string)
 
@@ -57,7 +56,7 @@ def get(part = None, timeout = .1):
 
 def put(part, value):
     """ Put a message on the wire. """
-    oa.core.parts[part].wire_in.put(value)
+    oa[part].wire_in.put(value)
 
 def empty(part = None):
     """ Remove all messages from `part.wire_in` input queue.
